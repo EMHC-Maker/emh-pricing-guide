@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>EMH Pricing App</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --gold: #C9A24D;
+    --gold-light: #e2c47a;
+    --black: #0a0a0a;
+    --card: #141414;
+    --card2: #1a1a1a;
+    --border: #2a2a2a;
+    --text: #f0ece4;
+    --muted: #888;
+    --pink: #FF017E;
+    --green: #4caf7d;
+  }
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+  }
+  header { text-align: center; margin-bottom: 24px; }
+  .logo-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 2px; }
+  .logo-emh { font-family: 'Playfair Display', serif; font-size: 1.9rem; color: var(--text); letter-spacing: 2px; }
+  .heart { color: var(--pink); font-size: 1.3rem; }
+  .logo-sub { font-size: 0.62rem; letter-spacing: 4px; color: var(--muted); text-transform: uppercase; }
+  .tagline { font-size: 0.68rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: flex;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 16px;
+  }
+  .mode-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 9px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 11px 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: var(--gold);
+    color: #000;
+  }
+
+  .w { width: 100%; max-width: 420px; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 20px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    color: var(--gold);
+    margin-bottom: 18px;
+    letter-spacing: 1px;
+  }
+  .field { margin-bottom: 16px; }
+  label {
+    display: block;
+    font-size: 0.7rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+  }
+  .input-wrap { position: relative; }
+  .prefix {
+    position: absolute; left: 13px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold); font-weight: 600; font-size: 1rem;
+  }
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    background: #0f0f0f;
+    border: 1.5px solid #333;
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 12px 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold); }
+  input.has-prefix { padding-left: 30px; }
+
+  /* Stepper */
+  .stepper {
+    display: flex;
+    align-items: center;
+    background: #0f0f0f;
+    border: 1.5px solid #333;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .stepper button {
+    background: none; border: none;
+    color: var(--gold); font-size: 1.3rem; font-weight: 700;
+    width: 48px; height: 48px; cursor: pointer; flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .stepper button:hover { background: #1e1e1e; }
+  .stepper input {
+    flex: 1; text-align: center;
+    background: transparent; border: none;
+    border-left: 1.5px solid #222; border-right: 1.5px solid #222;
+    border-radius: 0; padding: 12px 6px;
+    font-size: 1rem; color: var(--text);
+  }
+  .stepper input:focus { outline: none; border-color: #222; }
+  .hint { font-size: 0.68rem; color: var(--muted); margin-top: 5px; }
+
+  /* Two col */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Breakdown */
+  .results-card {
+    background: linear-gradient(135deg, #1a1308 0%, #0f0d08 100%);
+    border: 1px solid var(--gold);
+  }
+  .breakdown-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid #1f1d17;
+    font-size: 0.85rem;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row .lbl { color: #999; font-size: 0.8rem; }
+  .breakdown-row .val { color: var(--text); font-weight: 500; }
+  .breakdown-row.dim { opacity: 0.7; }
+  .divider { height: 1px; background: var(--gold); opacity: 0.3; margin: 4px 0; }
+  .final-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: 14px; margin-top: 4px;
+  }
+  .final-label { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--gold); }
+  .final-val { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold-light); }
+  .badge {
+    display: inline-block;
+    border: 1px solid var(--gold);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.7rem;
+    color: var(--gold);
+    letter-spacing: 1px;
+    margin-top: 10px;
+    text-transform: uppercase;
+    background: #1e1a0e;
+  }
+  .badge.green { border-color: var(--green); color: var(--green); background: #0d1a10; }
+
+  /* Saved products */
+  .saved-list { display: flex; flex-direction: column; gap: 8px; }
+  .saved-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0f0f0f; border: 1.5px solid #2a2a2a;
+    border-radius: 10px; padding: 11px 14px;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .saved-item:hover, .saved-item.active-product { border-color: var(--gold); }
+  .saved-item-name { font-size: 0.9rem; font-weight: 600; }
+  .saved-item-cost { font-size: 0.8rem; color: var(--muted); }
+  .saved-item-right { display: flex; align-items: center; gap: 10px; }
+  .del-btn {
+    background: none; border: none; color: #555;
+    font-size: 1rem; cursor: pointer; padding: 2px 6px;
+    transition: color 0.2s;
+  }
+  .del-btn:hover { color: #ff4444; }
+  .empty-state { font-size: 0.82rem; color: var(--muted); text-align: center; padding: 12px 0; }
+
+  /* Save product form */
+  .save-row { display: flex; gap: 8px; margin-top: 14px; }
+  .save-row input { flex: 1; }
+  .gold-btn {
+    background: var(--gold); color: #000;
+    border: none; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 12px 16px; cursor: pointer;
+    transition: opacity 0.2s; white-space: nowrap;
+  }
+  .gold-btn:hover { opacity: 0.85; }
+  .ghost-btn {
+    width: 100%; background: none;
+    border: 1.5px solid #333; border-radius: 10px;
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem; letter-spacing: 1.5px;
+    text-transform: uppercase; padding: 12px;
+    cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    margin-top: 4px;
+  }
+  .ghost-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* Event summary */
+  .summary-card {
+    background: linear-gradient(135deg, #0d0d1a 0%, #080810 100%);
+    border: 1px solid #3a3a6a;
+  }
+  .summary-card .card-title { color: #a0a0e0; }
+  .summary-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .summary-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #0f0f1a; border: 1px solid #2a2a4a;
+    border-radius: 10px; padding: 10px 14px;
+  }
+  .summary-item-left { font-size: 0.85rem; }
+  .summary-item-name { font-weight: 600; }
+  .summary-item-detail { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .summary-item-price { font-size: 0.95rem; font-weight: 600; color: #a0a0e0; }
+  .summary-del { background: none; border: none; color: #444; font-size: 0.9rem; cursor: pointer; margin-left: 10px; }
+  .summary-del:hover { color: #ff4444; }
+  .grand-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding-top: 14px; border-top: 1px solid #3a3a6a;
+  }
+  .grand-label { font-family: 'Playfair Display', serif; font-size: 1rem; color: #a0a0e0; }
+  .grand-val { font-family: 'Playfair Display', serif; font-size: 2rem; color: #c0c0ff; }
+
+  .section-divider {
+    width: 100%; max-width: 420px;
+    height: 1px; background: var(--border);
+    margin: 6px 0 16px;
+  }
+  .section-label {
+    width: 100%; max-width: 420px;
+    font-size: 0.65rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: #000;
+    font-size: 0.82rem; font-weight: 700;
+    padding: 10px 22px; border-radius: 30px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+    z-index: 999; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 380px) {
+    .final-val, .grand-val { font-size: 1.7rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-row">
+    <span class="logo-emh">EMH</span>
+    <span class="heart">♥</span>
+  </div>
+  <div class="logo-sub">Laser Engraving</div>
+  <div class="tagline">Pricing Calculator</div>
+  <div style="margin-top:10px;">
+    <span id="syncPill" onclick="manualSync()" style="display:inline-block;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 14px;border-radius:20px;border:1px solid #4caf7d;color:#4caf7d;background:rgba(74,158,106,0.1);font-weight:600;cursor:pointer;">✓ Synced</span>
+  </div>
+</header>
+
+<!-- Mode Toggle -->
+<div class="mode-toggle w">
+  <button class="mode-btn active" id="btn-retail" onclick="setMode('retail')">Retail Price</button>
+  <button class="mode-btn" id="btn-event" onclick="setMode('event')">Event Price</button>
+</div>
+
+<!-- ===================== RETAIL MODE ===================== -->
+<div id="mode-retail" class="w">
+
+  <!-- Saved Products -->
+  <div class="card w">
+    <div class="card-title">Saved Products</div>
+    <div class="saved-list" id="retail-saved-list">
+      <div class="empty-state">No saved products yet</div>
+    </div>
+    <div class="save-row">
+      <input type="text" id="retail-product-name" placeholder="Product name (e.g. Luggage Tag)" />
+      <button class="gold-btn" onclick="saveRetailProduct()">Save</button>
+    </div>
+  </div>
+
+  <!-- Inputs -->
+  <div class="card w">
+    <div class="card-title">Product Details</div>
+    <div class="field">
+      <label>Base Product Cost</label>
+      <div class="input-wrap">
+        <span class="prefix">$</span>
+        <input type="number" id="r-base-cost" class="has-prefix" placeholder="0.00" min="0" step="0.01" oninput="calcRetail()" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Labor Time</label>
+      <div class="stepper">
+        <button onclick="adjustR(-1)">−</button>
+        <input type="number" id="r-minutes" value="5" min="5" oninput="clampR(); calcRetail()" />
+        <button onclick="adjustR(1)">+</button>
+      </div>
+      <div class="hint">Minutes &nbsp;·&nbsp; 5 min minimum &nbsp;·&nbsp; $75/hr</div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card results-card w">
+    <div class="card-title">Price Breakdown</div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Base cost</span>
+      <span class="val" id="r-show-base">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">× 1.5 markup</span>
+      <span class="val" id="r-show-subtotal">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">+ 10% overhead</span>
+      <span class="val" id="r-show-overhead">$0.00</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="lbl">Total cost</span>
+      <span class="val" id="r-show-totalcost">$0.00</span>
+    </div>
+    <div class="divider"></div>
+    <div class="breakdown-row dim">
+      <span class="lbl">× 2 markup</span>
+      <span class="val" id="r-show-doubled">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">+ Labor (<span id="r-min-lbl">5</span> min @ $75/hr)</span>
+      <span class="val" id="r-show-labor">$0.00</span>
+    </div>
+    <div class="final-row">
+      <span class="final-label">Sell For</span>
+      <span class="final-val" id="r-show-final">$0.00</span>
+    </div>
+    <div><span class="badge" id="r-show-profit">Profit: $0.00</span></div>
+  </div>
+
+  <button class="ghost-btn w" onclick="resetRetail()">↺ &nbsp; Clear &amp; Reset</button>
+</div>
+
+<!-- ===================== EVENT MODE ===================== -->
+<div id="mode-event" class="w hidden">
+
+  <!-- Saved Products -->
+  <div class="card w">
+    <div class="card-title">Saved Products</div>
+    <div class="saved-list" id="event-saved-list">
+      <div class="empty-state">No saved products yet</div>
+    </div>
+    <div class="save-row">
+      <input type="text" id="event-product-name" placeholder="Product name (e.g. Luggage Tag)" />
+      <button class="gold-btn" onclick="saveEventProduct()">Save</button>
+    </div>
+  </div>
+
+  <!-- Item Pricing -->
+  <div class="card w">
+    <div class="card-title">Item Pricing</div>
+    <div class="two-col">
+      <div class="field">
+        <label>Product Cost</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="e-cost" class="has-prefix" placeholder="0.00" min="0" step="0.01" oninput="calcEvent()" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Your Price / Item</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="e-price" class="has-prefix" placeholder="0.00" min="0" step="0.01" oninput="calcEvent()" />
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Expected Guest Count</label>
+      <div class="stepper">
+        <button onclick="adjustGuests(-5)">−</button>
+        <input type="number" id="e-guests" value="50" min="1" oninput="calcEvent()" />
+        <button onclick="adjustGuests(5)">+</button>
+      </div>
+      <div class="hint">Tap +/− to adjust by 5, or type any number</div>
+    </div>
+  </div>
+
+  <!-- Item Results -->
+  <div class="card results-card w">
+    <div class="card-title">Item Revenue</div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Your floor cost (× 1.5 + 10%)</span>
+      <span class="val" id="e-show-floor">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Your price per item</span>
+      <span class="val" id="e-show-price">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Profit per item</span>
+      <span class="val" id="e-show-perprofit">$0.00</span>
+    </div>
+    <div class="divider"></div>
+    <div class="breakdown-row">
+      <span class="lbl">Estimated guests</span>
+      <span class="val" id="e-show-guests">50</span>
+    </div>
+    <div class="final-row">
+      <span class="final-label">Item Revenue</span>
+      <span class="final-val" id="e-show-total">$0.00</span>
+    </div>
+    <div><span class="badge green" id="e-show-profit">Total Item Profit: $0.00</span></div>
+  </div>
+
+  <!-- Add to Summary -->
+  <button class="gold-btn w" style="margin-bottom:14px; padding:14px;" onclick="addToSummary()">+ Add to Event Summary</button>
+
+  <!-- Event Fee Settings -->
+  <div class="card w">
+    <div class="card-title">Event Fee Settings</div>
+    <div class="two-col">
+      <div class="field">
+        <label>Base Rate ($)</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="e-base-rate" class="has-prefix" value="450" min="0" step="10" oninput="calcSummary()" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Hours Included</label>
+        <input type="number" id="e-base-hours" value="3" min="1" step="1" oninput="calcSummary()" />
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="field">
+        <label>Overtime Rate ($/hr)</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="e-ot-rate" class="has-prefix" value="100" min="0" step="10" oninput="calcSummary()" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Extra Hours</label>
+        <div class="stepper">
+          <button onclick="adjustOT(-1)">−</button>
+          <input type="number" id="e-ot-hours" value="0" min="0" oninput="calcSummary()" />
+          <button onclick="adjustOT(1)">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Summary -->
+  <div class="card summary-card w">
+    <div class="card-title">Event Summary</div>
+    <div class="summary-items" id="summary-items">
+      <div class="empty-state" id="summary-empty">No items added yet</div>
+    </div>
+    <div class="breakdown-row" style="padding-top:8px;">
+      <span class="lbl">Event fee (<span id="s-base-hours">3</span> hrs)</span>
+      <span class="val" id="s-show-base">$450.00</span>
+    </div>
+    <div class="breakdown-row dim" id="s-ot-row" style="display:none;">
+      <span class="lbl">Overtime (<span id="s-ot-hrs">0</span> hrs × $<span id="s-ot-rate-lbl">100</span>)</span>
+      <span class="val" id="s-show-ot">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Total item revenue</span>
+      <span class="val" id="s-show-items">$0.00</span>
+    </div>
+    <div class="grand-row" style="padding-bottom:16px; border-bottom: 1px solid #3a3a6a; margin-bottom:4px;">
+      <span class="grand-label" style="font-size:0.9rem;">Proposal Total</span>
+      <span class="grand-val" style="font-size:1.6rem;" id="s-show-grand">$0.00</span>
+    </div>
+
+    <!-- Deductions -->
+    <div style="margin-top:14px; margin-bottom:10px;">
+      <div style="font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); margin-bottom:12px;">Deduct Your Costs</div>
+      <div class="two-col" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Miles Driven</label>
+          <input type="number" id="s-miles" placeholder="0" min="0" step="1" oninput="calcSummary()" />
+          <div class="hint">@ $0.67/mile</div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Packaging / Item</label>
+          <div class="input-wrap">
+            <span class="prefix">$</span>
+            <input type="number" id="s-pkg" class="has-prefix" placeholder="0.00" min="0" step="0.01" oninput="calcSummary()" />
+          </div>
+          <div class="hint">× total items</div>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label>Misc Supplies / Other</label>
+        <div class="input-wrap">
+          <span class="prefix">$</span>
+          <input type="number" id="s-misc" class="has-prefix" placeholder="0.00" min="0" step="1" oninput="calcSummary()" />
+        </div>
+        <div class="hint">Machine wear, consumables, etc.</div>
+      </div>
+    </div>
+
+    <div class="breakdown-row dim">
+      <span class="lbl">Travel cost</span>
+      <span class="val" id="s-show-travel">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Packaging cost</span>
+      <span class="val" id="s-show-pkg">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Product costs</span>
+      <span class="val" id="s-show-prodcost">$0.00</span>
+    </div>
+    <div class="breakdown-row dim">
+      <span class="lbl">Misc / supplies</span>
+      <span class="val" id="s-show-misc">$0.00</span>
+    </div>
+    <div class="breakdown-row">
+      <span class="lbl">Total deductions</span>
+      <span class="val" id="s-show-deductions">$0.00</span>
+    </div>
+
+    <!-- Take-home -->
+    <div style="background:#0a0f0a; border:1px solid #2a5a2a; border-radius:12px; padding:16px; margin-top:14px;">
+      <div style="font-size:0.65rem; letter-spacing:3px; text-transform:uppercase; color:#4caf7d; margin-bottom:12px;">Your Take-Home</div>
+      <div class="breakdown-row dim" style="border-color:#1a2a1a;">
+        <span class="lbl">Net profit</span>
+        <span class="val" id="s-show-net">$0.00</span>
+      </div>
+      <div class="breakdown-row dim" style="border-color:#1a2a1a;">
+        <span class="lbl">Total event hours</span>
+        <span class="val" id="s-show-totalhrs">3</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; padding-top:12px;">
+        <span style="font-family:'Playfair Display',serif; font-size:0.95rem; color:#4caf7d;">Hourly Take-Home</span>
+        <span style="font-family:'Playfair Display',serif; font-size:1.9rem;" id="s-show-hourly">$0.00</span>
+      </div>
+      <div style="margin-top:10px;">
+        <span class="badge" id="s-hourly-badge" style="border-color:#4caf7d; color:#4caf7d; background:#0d1a0d;">Calculating...</span>
+      </div>
+    </div>
+  </div>
+
+  <button class="ghost-btn w" onclick="clearSummary()">↺ &nbsp; Clear Summary</button>
+</div>
+
+<!-- Backup Bar (always visible at bottom) -->
+<div style="width:100%; max-width:420px; margin-top:24px;">
+  <div style="font-size:0.62rem; letter-spacing:3px; text-transform:uppercase; color:var(--muted); text-align:center; margin-bottom:10px;">Data Backup</div>
+  <div style="display:flex; gap:10px;">
+    <button class="gold-btn" style="flex:1; padding:14px 8px; font-size:0.78rem;" onclick="exportBackup()">💾 &nbsp; Back Up Now</button>
+    <button class="ghost-btn" style="flex:1; margin:0; padding:14px 8px; font-size:0.78rem;" onclick="document.getElementById('import-input').click()">📂 &nbsp; Restore Backup</button>
+  </div>
+  <div style="font-size:0.68rem; color:var(--muted); text-align:center; margin-top:8px;">Back up to Google Drive anytime you add products</div>
+  <input type="file" id="import-input" accept=".json" style="display:none" onchange="importBackup(event)" />
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage ──
+const STORAGE_KEY = 'emh_products_v2';
+const SUMMARY_KEY = 'emh_summary_v2';
+
+function loadProducts() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveProducts(p) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
+  scheduleSync();
+}
+function loadSummary() {
+  try { return JSON.parse(localStorage.getItem(SUMMARY_KEY)) || []; }
+  catch { return []; }
+}
+function saveSummaryData(s) {
+  localStorage.setItem(SUMMARY_KEY, JSON.stringify(s));
+}
+
+let products = loadProducts();
+let summaryItems = loadSummary();
+let currentMode = 'retail';
+
+// ── Helpers ──
+function fmt(n) { return '$' + Math.max(0, n).toFixed(2); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Mode ──
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('mode-retail').classList.toggle('hidden', m !== 'retail');
+  document.getElementById('mode-event').classList.toggle('hidden', m !== 'event');
+  document.getElementById('btn-retail').classList.toggle('active', m === 'retail');
+  document.getElementById('btn-event').classList.toggle('active', m === 'event');
+}
+
+// ── Retail calc ──
+function calcRetail() {
+  const base = parseFloat(document.getElementById('r-base-cost').value) || 0;
+  const minutes = parseInt(document.getElementById('r-minutes').value) || 5;
+  const subtotal = base * 1.5;
+  const overhead = subtotal * 0.10;
+  const totalCost = subtotal + overhead;
+  const doubled = totalCost * 2;
+  const labor = (minutes / 60) * 75;
+  const final = doubled + labor;
+  const profit = final - base - labor;
+
+  document.getElementById('r-show-base').textContent = fmt(base);
+  document.getElementById('r-show-subtotal').textContent = fmt(subtotal);
+  document.getElementById('r-show-overhead').textContent = fmt(overhead);
+  document.getElementById('r-show-totalcost').textContent = fmt(totalCost);
+  document.getElementById('r-show-doubled').textContent = fmt(doubled);
+  document.getElementById('r-show-labor').textContent = fmt(labor);
+  document.getElementById('r-show-final').textContent = fmt(final);
+  document.getElementById('r-min-lbl').textContent = minutes;
+  document.getElementById('r-show-profit').textContent = 'Profit: ' + fmt(profit);
+}
+function adjustR(d) {
+  const inp = document.getElementById('r-minutes');
+  inp.value = Math.max(5, (parseInt(inp.value) || 5) + d);
+  calcRetail();
+}
+function clampR() {
+  const inp = document.getElementById('r-minutes');
+  if (!inp.value || parseInt(inp.value) < 5) inp.value = 5;
+  calcRetail();
+}
+function resetRetail() {
+  document.getElementById('r-base-cost').value = '';
+  document.getElementById('r-minutes').value = 5;
+  calcRetail();
+}
+
+// ── Event calc ──
+function calcEvent() {
+  const cost = parseFloat(document.getElementById('e-cost').value) || 0;
+  const price = parseFloat(document.getElementById('e-price').value) || 0;
+  const guests = parseInt(document.getElementById('e-guests').value) || 0;
+  const floor = cost * 1.5 * 1.10;
+  const perProfit = price - floor;
+  const totalRev = price * guests;
+  const totalProfit = perProfit * guests;
+
+  document.getElementById('e-show-floor').textContent = fmt(floor);
+  document.getElementById('e-show-price').textContent = fmt(price);
+  document.getElementById('e-show-perprofit').textContent = fmt(perProfit);
+  document.getElementById('e-show-guests').textContent = guests;
+  document.getElementById('e-show-total').textContent = fmt(totalRev);
+  document.getElementById('e-show-profit').textContent = 'Total Item Profit: ' + fmt(totalProfit);
+}
+function adjustGuests(d) {
+  const inp = document.getElementById('e-guests');
+  inp.value = Math.max(1, (parseInt(inp.value) || 0) + d);
+  calcEvent();
+}
+
+// ── Summary ──
+function calcSummary() {
+  const baseRate = parseFloat(document.getElementById('e-base-rate').value) || 0;
+  const baseHours = parseInt(document.getElementById('e-base-hours').value) || 0;
+  const otRate = parseFloat(document.getElementById('e-ot-rate').value) || 0;
+  const otHours = parseInt(document.getElementById('e-ot-hours').value) || 0;
+  const otTotal = otRate * otHours;
+  const itemsTotal = summaryItems.reduce((a, i) => a + i.revenue, 0);
+  const totalItems = summaryItems.reduce((a, i) => a + i.guests, 0);
+  const grand = baseRate + otTotal + itemsTotal;
+
+  // Deductions
+  const miles = parseFloat(document.getElementById('s-miles').value) || 0;
+  const pkgPerItem = parseFloat(document.getElementById('s-pkg').value) || 0;
+  const misc = parseFloat(document.getElementById('s-misc').value) || 0;
+  const travelCost = miles * 0.67;
+  const pkgCost = pkgPerItem * totalItems;
+  const prodCost = summaryItems.reduce((a, i) => a + (i.floorCost * i.guests), 0);
+  const totalDeductions = travelCost + pkgCost + prodCost + misc;
+  const netProfit = grand - totalDeductions;
+  const totalHours = baseHours + otHours;
+  const hourly = totalHours > 0 ? netProfit / totalHours : 0;
+
+  // Render revenue
+  document.getElementById('s-base-hours').textContent = baseHours;
+  document.getElementById('s-show-base').textContent = fmt(baseRate);
+  document.getElementById('s-ot-row').style.display = otHours > 0 ? 'flex' : 'none';
+  document.getElementById('s-ot-hrs').textContent = otHours;
+  document.getElementById('s-ot-rate-lbl').textContent = otRate;
+  document.getElementById('s-show-ot').textContent = fmt(otTotal);
+  document.getElementById('s-show-items').textContent = fmt(itemsTotal);
+  document.getElementById('s-show-grand').textContent = fmt(grand);
+
+  // Render deductions
+  document.getElementById('s-show-travel').textContent = fmt(travelCost);
+  document.getElementById('s-show-pkg').textContent = fmt(pkgCost);
+  document.getElementById('s-show-prodcost').textContent = fmt(prodCost);
+  document.getElementById('s-show-misc').textContent = fmt(misc);
+  document.getElementById('s-show-deductions').textContent = fmt(totalDeductions);
+
+  // Render take-home
+  document.getElementById('s-show-net').textContent = fmt(netProfit);
+  document.getElementById('s-show-totalhrs').textContent = totalHours + ' hrs';
+  const hourlyEl = document.getElementById('s-show-hourly');
+  const badgeEl = document.getElementById('s-hourly-badge');
+  hourlyEl.textContent = fmt(hourly);
+  if (hourly >= 100) {
+    hourlyEl.style.color = '#4caf7d';
+    badgeEl.textContent = 'Above your $100/hr floor';
+    badgeEl.style.borderColor = '#4caf7d';
+    badgeEl.style.color = '#4caf7d';
+    badgeEl.style.background = '#0d1a0d';
+  } else if (hourly > 0) {
+    hourlyEl.style.color = '#e07a3a';
+    badgeEl.textContent = 'Below $100/hr — adjust your pricing';
+    badgeEl.style.borderColor = '#e07a3a';
+    badgeEl.style.color = '#e07a3a';
+    badgeEl.style.background = '#1a0e08';
+  } else {
+    hourlyEl.style.color = 'var(--text)';
+    badgeEl.textContent = 'Add items to see your hourly';
+    badgeEl.style.borderColor = 'var(--gold)';
+    badgeEl.style.color = 'var(--gold)';
+    badgeEl.style.background = '#1e1a0e';
+  }
+}
+function adjustOT(d) {
+  const inp = document.getElementById('e-ot-hours');
+  inp.value = Math.max(0, (parseInt(inp.value) || 0) + d);
+  calcSummary();
+}
+
+function addToSummary() {
+  const name = document.getElementById('event-product-name').value.trim() ||
+               document.querySelector('#event-saved-list .saved-item.active-product .saved-item-name')?.textContent ||
+               'Item';
+  const price = parseFloat(document.getElementById('e-price').value) || 0;
+  const guests = parseInt(document.getElementById('e-guests').value) || 0;
+  if (price === 0 || guests === 0) { showToast('Enter price and guest count first'); return; }
+  const cost = parseFloat(document.getElementById('e-cost').value) || 0;
+  const floorCost = cost * 1.5 * 1.10;
+  const revenue = price * guests;
+  summaryItems.push({ id: Date.now(), name, price, guests, revenue, floorCost });
+  saveSummaryData(summaryItems);
+  renderSummary();
+  calcSummary();
+  showToast(name + ' added to summary');
+}
+
+function renderSummary() {
+  const list = document.getElementById('summary-items');
+  const empty = document.getElementById('summary-empty');
+  if (summaryItems.length === 0) {
+    list.innerHTML = '<div class="empty-state" id="summary-empty">No items added yet</div>';
+    return;
+  }
+  list.innerHTML = summaryItems.map(item => `
+    <div class="summary-item">
+      <div class="summary-item-left">
+        <div class="summary-item-name">${item.name}</div>
+        <div class="summary-item-detail">${item.guests} guests × ${fmt(item.price)} = ${fmt(item.revenue)}</div>
+      </div>
+      <div style="display:flex;align-items:center;">
+        <span class="summary-item-price">${fmt(item.revenue)}</span>
+        <button class="summary-del" onclick="removeSummaryItem(${item.id})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeSummaryItem(id) {
+  summaryItems = summaryItems.filter(i => i.id !== id);
+  saveSummaryData(summaryItems);
+  renderSummary();
+  calcSummary();
+}
+
+function clearSummary() {
+  summaryItems = [];
+  saveSummaryData(summaryItems);
+  renderSummary();
+  calcSummary();
+  showToast('Summary cleared');
+}
+
+// ── Saved Products ──
+function renderSavedProducts() {
+  ['retail', 'event'].forEach(mode => {
+    const list = document.getElementById(mode + '-saved-list');
+    if (products.length === 0) {
+      list.innerHTML = '<div class="empty-state">No saved products yet</div>';
+      return;
+    }
+    list.innerHTML = products.map(p => `
+      <div class="saved-item" onclick="loadProduct('${mode}', ${p.id})" id="${mode}-prod-${p.id}">
+        <div>
+          <div class="saved-item-name">${p.name}</div>
+          <div class="saved-item-cost">$${p.cost.toFixed(2)} cost</div>
+        </div>
+        <div class="saved-item-right">
+          <button class="del-btn" onclick="event.stopPropagation(); deleteProduct(${p.id})">✕</button>
+        </div>
+      </div>
+    `).join('');
+  });
+}
+
+function loadProduct(mode, id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.querySelectorAll(`#${mode}-saved-list .saved-item`).forEach(el => el.classList.remove('active-product'));
+  const el = document.getElementById(`${mode}-prod-${id}`);
+  if (el) el.classList.add('active-product');
+  if (mode === 'retail') {
+    document.getElementById('r-base-cost').value = p.cost;
+    document.getElementById('retail-product-name').value = p.name;
+    calcRetail();
+  } else {
+    document.getElementById('e-cost').value = p.cost;
+    document.getElementById('event-product-name').value = p.name;
+    calcEvent();
+  }
+}
+
+function saveRetailProduct() {
+  const name = document.getElementById('retail-product-name').value.trim();
+  const cost = parseFloat(document.getElementById('r-base-cost').value);
+  if (!name || isNaN(cost)) { showToast('Enter a name and cost first'); return; }
+  const existing = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing >= 0) { products[existing].cost = cost; showToast('Updated: ' + name); }
+  else { products.push({ id: Date.now(), name, cost }); showToast('Saved: ' + name); }
+  saveProducts(products);
+  renderSavedProducts();
+}
+
+function saveEventProduct() {
+  const name = document.getElementById('event-product-name').value.trim();
+  const cost = parseFloat(document.getElementById('e-cost').value);
+  if (!name || isNaN(cost)) { showToast('Enter a name and cost first'); return; }
+  const existing = products.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+  if (existing >= 0) { products[existing].cost = cost; showToast('Updated: ' + name); }
+  else { products.push({ id: Date.now(), name, cost }); showToast('Saved: ' + name); }
+  saveProducts(products);
+  renderSavedProducts();
+}
+
+function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  saveProducts(products);
+  renderSavedProducts();
+  showToast('Product removed');
+}
+
+// ── Backup / Restore ──
+function exportBackup() {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = {
+    version: 'emh-v3',
+    exported: today,
+    products,
+    summaryItems
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `EMH-Pricing-Backup-${today}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded. Save to Google Drive!');
+}
+
+function importBackup(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.products) {
+        products = data.products;
+        saveProducts(products);
+        renderSavedProducts();
+      }
+      if (data.summaryItems) {
+        summaryItems = data.summaryItems;
+        saveSummaryData(summaryItems);
+        renderSummary();
+      }
+      calcSummary();
+      showToast('Backup restored successfully!');
+    } catch {
+      showToast('Could not read that file. Try again.');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+// ── Google Sheets Sync ──
+const SHEET_ID = '19vXrJXUgAmDFTusP6sZHWJSfWuSrRnoJTJZyem6UDQY';
+const CLIENT_EMAIL = 'emh-apps@xenon-bit-496202-k3.iam.gserviceaccount.com';
+const PRIVATE_KEY = '-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDEiDFbHl+EZOJ0\ncuiZU5lEhEbrT+qwspSnA/UAEQgah1fYZqU+0httd0iZj8XXSWxaFZkjWjkH9IDV\nhXvSzfJMwEgAhEFoeXZQNQrdbPrtJnz07KBWIZjL6X/EeuK9KRPDop40zmMFpdXD\ng1aIb993JTXjWLOSnKEYjl94iUep76pBwQGy18qH9TzMZr/ZV0rO//uSxgr/e9qI\nnLgdEUJ/sr7LDzQaGLmyb3RZvCJEA64qcdFGFgSj6W6X5OPsyBai1/1FPz45ob6l\nyNpmyfDxqpeS/DwbTF/oaFUtfPgVaEebMNnEY4RDHH6bZa66+yqPB3AhF6cZzRAV\nfe22mt+LAgMBAAECggEAMGyuXJk7R8/jzHWTwlPK7Ar7vndOiIM4BX8AGygXKxI2\nHugLx1LV1z8Q8GVwhf9dZ0TzGrbcXo1sQTBGtkZwcWDfXOE5jJiBAnpPVwfHPC/D\nkkXLq+1TTMsX5D2zKJC6gfXLrY887uNRrH7sD2ohUaYlhQMSHAnj170c4QJSWhh4\n8Afuj7GdtFxIDT+vaHPHuFGp3pDv4CLXYw0vqqAP9vudweRLJE5S3Ca6NOhHBgn/\nz97MggYZGw5JEtN28XQKNcP1t5ZpPiZ9RCXr+aUaD3svbzOyWy5h7bxzGwXjza8i\nf5HGb/IRVfjpSFW5rTfU24vO2grtmV1cnPDHda6qoQKBgQDnYX4dpkq7Ob0R85Mn\n3WGnycZl7htRab35PFLvKYvUrnpY0jULe26mS3RBoaMGByoz/6SULCU6crLHahoK\nSNK+q0tL8ficKcNs13cCaqY+FSklHd6CW2l1iTT+wGnhtkNLottluJKJmHQWuhKY\n1VbCToNFmh8cF2Hs4/kympy1jQKBgQDZcXbZRlFdlvyNXf+4EbkjPaQVm54hYC1+\nyXUNoYgtmDfhGNfsPZ5bhwsT17O2nNda8CqTxkHIVb/QcYJnaxe4Ergz1ll0JEqz\nzSCyQsPSftMDkq44Vy3aQ1MH7bmAuQSj+QbqaWgSsx6exsUiZ/8ONv5joiWiuK9n\nAmFXAQIndwKBgBCKYqah9aOuu/pljDaEV+/Tt9Aflmpagc8oZdFdCfb5RhvFYy9f\n8ogGytfKQ0oyBu1SsCQ7h6nG+0rQJe5oSFCDFE3ojVo0jhjgykws7ZdwkdFqcjal\nbEOPvG8duDP/gI4OpVp/OFKHyHy7borobVxUmoPGQcUTUtfJcE4SyXMdAoGAdSJS\nS6k9m5UCZ4UDhDzH5twF0D4MaR5OY8ZScA1cNnORZojjiDeJXvTYWtAP14eV2z8V\nMJXUSf8nXTpIbT2bgWVUJViKx63lMAaIXn7ozjPTqFET2PXdlX4+9D5zd4wzm8FC\noHQ3xBsJm66n82jiVN37G+D1NTsYAf2eQigg6PECgYBXlxFWU1shVIvlBmlLrByG\nCxVaKBAfQd1RdzQGM2/eo6qWhR9GQr2TQiEPZ9ep3iHkaIXbwT3AMoz9ffZdDUPa\nc7jahqozGZ3MMEOBkzIe8Jyq/Mh8PWbbxWy4S8FeVLd69MEwfgZOB3etHU9SMnOO\nF465ICam9VaXUUWn2/jRpg==\n-----END PRIVATE KEY-----\n';
+
+let syncTimer = null;
+
+function setSyncStatus(type, text) {
+  const el = document.getElementById('syncPill');
+  const styles = {
+    synced: 'border:1px solid #4caf7d;color:#4caf7d;background:rgba(74,158,106,0.1);',
+    syncing: 'border:1px solid #C9A24D;color:#C9A24D;background:rgba(201,162,77,0.1);',
+    error: 'border:1px solid #cc3333;color:#cc6666;background:rgba(204,51,51,0.1);'
+  };
+  el.style.cssText = `display:inline-block;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 14px;border-radius:20px;font-weight:600;cursor:pointer;${styles[type]}`;
+  el.textContent = text;
+}
+
+async function getToken() {
+  const now = Math.floor(Date.now()/1000);
+  const hdr = {alg:'RS256',typ:'JWT'};
+  const pay = {iss:CLIENT_EMAIL,scope:'https://www.googleapis.com/auth/spreadsheets',aud:'https://oauth2.googleapis.com/token',exp:now+3600,iat:now};
+  const b64 = o => btoa(JSON.stringify(o)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const inp = b64(hdr)+'.'+b64(pay);
+  const pem = PRIVATE_KEY.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\n/g,'');
+  const bin = Uint8Array.from(atob(pem),c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8',bin.buffer,{name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'},false,['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5',key,new TextEncoder().encode(inp));
+  const jwt = inp+'.'+btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const r = await fetch('https://oauth2.googleapis.com/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`});
+  const d = await r.json();
+  if (!d.access_token) throw new Error('No token');
+  return d.access_token;
+}
+
+async function syncToSheets() {
+  setSyncStatus('syncing', '⟳ Syncing');
+  try {
+    const token = await getToken();
+    const prodHeaders = ['ID','Name','Cost','Updated'];
+    const prodRows = products.map(p => [p.id, p.name, p.cost, new Date(p.id).toLocaleString()]);
+    const prodValues = [prodHeaders, ...prodRows];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Products!A1:D${prodValues.length}?valueInputOption=RAW`, {
+      method:'PUT', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+      body: JSON.stringify({values: prodValues})
+    });
+    setSyncStatus('synced', '✓ Synced');
+  } catch(e) {
+    console.error(e);
+    setSyncStatus('error', '⚠ Sync Failed');
+  }
+}
+
+function scheduleSync() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncToSheets, 1500);
+}
+
+async function manualSync() {
+  await syncToSheets();
+  showToast('Synced to Google Sheets');
+}
+
+// ── Init ──
+renderSavedProducts();
+renderSummary();
+calcRetail();
+calcEvent();
+calcSummary();
+syncToSheets();
+</script>
+</body>
+</html>
