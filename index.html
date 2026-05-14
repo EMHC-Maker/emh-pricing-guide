@@ -290,9 +290,7 @@
   </div>
   <div class="logo-sub">Laser Engraving</div>
   <div class="tagline">Pricing Calculator</div>
-  <div style="margin-top:10px;">
-    <span id="syncPill" onclick="manualSync()" style="display:inline-block;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 14px;border-radius:20px;border:1px solid #4caf7d;color:#4caf7d;background:rgba(74,158,106,0.1);font-weight:600;cursor:pointer;">✓ Synced</span>
-  </div>
+  <div style="margin-top:10px;"><span id="syncPill" onclick="manualSync()" style="display:inline-block;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 14px;border-radius:20px;border:1px solid #4caf7d;color:#4caf7d;background:rgba(74,158,106,0.1);font-weight:600;cursor:pointer;">✓ Synced</span></div>
 </header>
 
 <!-- Mode Toggle -->
@@ -613,6 +611,7 @@ function loadSummary() {
 }
 function saveSummaryData(s) {
   localStorage.setItem(SUMMARY_KEY, JSON.stringify(s));
+  scheduleSync();
 }
 
 let products = loadProducts();
@@ -983,6 +982,13 @@ async function syncToSheets() {
       method:'PUT', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
       body: JSON.stringify({values: prodValues})
     });
+    const summHeaders = ['ID','Name','Price/Item','Guests','Revenue','Floor Cost','Saved'];
+    const summRows = summaryItems.map(i => [i.id, i.name, i.price, i.guests, i.revenue, i.floorCost != null ? Number(i.floorCost).toFixed(2) : '', new Date(i.id).toLocaleString()]);
+    const summValues = [summHeaders, ...summRows];
+    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/EventSummary!A1:G${summValues.length}?valueInputOption=RAW`, {
+      method:'PUT', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},
+      body: JSON.stringify({values: summValues})
+    });
     setSyncStatus('synced', '✓ Synced');
   } catch(e) {
     console.error(e);
@@ -997,7 +1003,7 @@ function scheduleSync() {
 
 async function manualSync() {
   await syncToSheets();
-  showToast('Synced to Google Sheets');
+  showToast('Synced to Google Sheets ✓');
 }
 
 // ── Init ──
